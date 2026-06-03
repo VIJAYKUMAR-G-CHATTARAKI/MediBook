@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: medibook-service
+
+  # Active profile (dev for local, prod for AWS)
+  profiles:
+    active: dev
+
+  # Common JPA settings (apply to all profiles)
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+# Server configuration
+server:
+  port: 8081
+  error:
+    include-message: always
+    include-binding-errors: always
+  servlet:
+    context-path: /api/v1     # All APIs prefixed with /api/v1
+
+# Actuator endpoints (production monitoring)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Application info
+info:
+  app:
+    name: MediBook
+    description: Doctor Appointment Booking System
+    version: 1.0.0
+
+# Default business rules (admin can override)
+medibook:
+  booking:
+    default-work-start: "10:00"
+    default-work-end: "20:00"
+    default-slot-duration-minutes: 30
+    default-max-bookings-per-slot: 2
+    timezone: "Asia/Kolkata"
+  jwt:
+    secret: ${JWT_SECRET:medibook-super-secret-key-for-jwt-signing-2026-must-be-long-enough}
+    expiration-ms: 86400000   # 24 hours in milliseconds
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.medibook: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %-5level - [%thread] - %logger{36} - %msg%n"

@@ -1,0 +1,24 @@
+spring:
+  # Production - all values from environment variables (AWS)
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate         # NEVER auto-modify schema in production!
+    show-sql: false              # Don't log SQL in production
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+# Less verbose logging in production
+logging:
+  level:
+    root: WARN
+    com.medibook: INFO
+    org.springframework.security: WARN

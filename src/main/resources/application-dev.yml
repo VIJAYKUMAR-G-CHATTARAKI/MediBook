@@ -1,0 +1,25 @@
+spring:
+  # MySQL connection for LOCAL development
+  datasource:
+    url: jdbc:mysql://localhost:3306/medibook_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+
+  jpa:
+    hibernate:
+      ddl-auto: update           # Auto-create/update tables in dev
+    show-sql: true               # See SQL in logs (helpful for learning!)
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+# More verbose logging in dev
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.springframework.security: DEBUG
