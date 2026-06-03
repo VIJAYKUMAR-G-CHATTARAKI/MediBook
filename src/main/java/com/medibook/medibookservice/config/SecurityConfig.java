@@ -4,6 +4,7 @@ import com.medibook.medibookservice.security.CustomUserDetailsService;
 import com.medibook.medibookservice.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -49,26 +50,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF (we use JWT, not session cookies)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // Configure URL access rules
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints (no auth needed)
+                        // =====================================================
+                        // FULLY PUBLIC ENDPOINTS (no auth required)
+                        // =====================================================
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
 
-                        // All other endpoints require authentication
+                        // Public doctor browsing - GET requests only
+                        .requestMatchers(HttpMethod.GET, "/doctors").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/doctors/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/doctors/specializations").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}").permitAll()
+
+                        // =====================================================
+                        // AUTHENTICATED ENDPOINTS
+                        // =====================================================
+                        // Note: /doctors/me/** are handled by @PreAuthorize on controller
+                        // Note: /admin/** are handled by @PreAuthorize on controller
                         .anyRequest().authenticated()
                 )
-
-                // Make app stateless (no sessions, only JWT)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Add our JWT filter before Spring's default auth filter
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
