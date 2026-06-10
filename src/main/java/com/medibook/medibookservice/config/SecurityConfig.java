@@ -64,6 +64,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/doctors/specializations").permitAll()
                         .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}").permitAll()
 
+                        // Public slot browsing (Phase 3) - only numeric IDs
+                        .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/available").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/available/range").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/available/next").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/dates").permitAll()
+
                         // =====================================================
                         // AUTHENTICATED ENDPOINTS
                         // =====================================================
