@@ -17,8 +17,27 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Spring Security configuration for the MediBook application.
+ *
+ * <p><b>Security Strategy:</b></p>
+ * <ul>
+ *   <li>JWT-based stateless authentication</li>
+ *   <li>Public endpoints explicitly permit-all'd</li>
+ *   <li>All other endpoints require authentication (catch-all)</li>
+ *   <li>Role-based access enforced via @PreAuthorize on controllers</li>
+ * </ul>
+ *
+ * <p><b>Phase Evolution:</b></p>
+ * <ul>
+ *   <li>Phase 1: Authentication endpoints public; rest authenticated</li>
+ *   <li>Phase 2: Doctor browsing endpoints (GET) added as public</li>
+ *   <li>Phase 3: Slot browsing endpoints (GET) added as public</li>
+ *   <li>Phase 4: Booking endpoints - NO public access (private data)</li>
+ * </ul>
+ */
 @Configuration
-@EnableMethodSecurity   // Enables @PreAuthorize for role-based access on methods
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -53,28 +72,51 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // =====================================================
-                        // FULLY PUBLIC ENDPOINTS (no auth required)
+                        // PHASE 1: PUBLIC ENDPOINTS (authentication & monitoring)
                         // =====================================================
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
 
-                        // Public doctor browsing - GET requests only
+                        // =====================================================
+                        // PHASE 2: PUBLIC DOCTOR BROWSING (GET only, numeric IDs)
+                        // =====================================================
                         .requestMatchers(HttpMethod.GET, "/doctors").permitAll()
                         .requestMatchers(HttpMethod.GET, "/doctors/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/doctors/specializations").permitAll()
                         .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}").permitAll()
 
-                        // Public slot browsing (Phase 3) - only numeric IDs
+                        // =====================================================
+                        // PHASE 3: PUBLIC SLOT BROWSING (GET only, numeric IDs)
+                        // =====================================================
                         .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/available").permitAll()
                         .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/available/range").permitAll()
                         .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/available/next").permitAll()
                         .requestMatchers(HttpMethod.GET, "/doctors/{id:[0-9]+}/slots/dates").permitAll()
 
                         // =====================================================
-                        // AUTHENTICATED ENDPOINTS
+                        // PHASE 4: BOOKING ENDPOINTS (NONE public - all require auth)
                         // =====================================================
-                        // Note: /doctors/me/** are handled by @PreAuthorize on controller
-                        // Note: /admin/** are handled by @PreAuthorize on controller
+                        // Bookings contain private patient data. Always authenticated.
+                        // Role enforcement via @PreAuthorize on controllers:
+                        //
+                        //   PatientBookingController  -> @PreAuthorize("hasRole('PATIENT')")
+                        //     Paths: /me/bookings/**
+                        //
+                        //   DoctorBookingController   -> @PreAuthorize("hasRole('DOCTOR')")
+                        //     Paths: /doctors/me/bookings/**
+                        //
+                        //   AdminBookingController    -> @PreAuthorize("hasRole('ADMIN')")
+                        //     Paths: /admin/bookings/**
+                        //            /admin/patients/{id}/bookings
+                        //            /admin/doctors/{id}/bookings
+
+                        // =====================================================
+                        // CATCH-ALL: everything else requires authentication
+                        // =====================================================
+                        // Also covers:
+                        //   /doctors/me/**         -> DOCTOR role (Phase 2, 3, 4)
+                        //   /admin/**              -> ADMIN role (Phase 2, 3, 4)
+                        //   /me/**                 -> PATIENT role (Phase 4)
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
